@@ -1,0 +1,84 @@
+Numerical method for 2D FVM with cooling
+coils
+
+Fig 5: Nodal grid for 2d heat analysis
+
+3a) Problem statement: To find the temperatures of each of the nodes,
+provided that the length of the rods is 1m each, thickness of wall is 1m (z), the
+thermal conducƟvity is 2 W/m.◦C, specific heat is 983.24J/Kg◦C. Here heat
+transfer happens in both x and y direcƟon. The Ɵme interval is 100 s. There are
+4 boundaries as given in figure.
+In this case there are 2 cooling coils (highlighted in red) passing through the 20
+x 20 grid (400 nodes), the temperatures through the cooling coil i.e. the column
+will be the same. Both the cooling coils are 0.05 m and 0.25 m away from the
+leŌ boundary. The wall is considered to be adiabaƟc. Also,
+In real life, this wall surrounds the calandria that holds the fuel bundles in
+nuclear reactor. The neutrons that are created during fission, internal heat
+generaƟon takes place. This can heat up the concrete wall surrounding it,
+hence we must include internal heat generaƟon in the equaƟon.
+
+19
+
+3b) EquaƟon used:
+1) Tnew = Told + k. ( ௗ௧
+௠.௖௣
+). (ax. ( (்೔షభ,ೕି்೔,ೕ)
+ௗ௫_ଵ
+-
+(்೔,ೕି்೔శభ,ೕ)
+ௗ௫_ଶ
+) + ay. (
+
+(்೔,ೕషభି்೔,ೕ)
+ௗ௬_ଵ
+-
+(்೔,ೕି்೔,ೕశభ)
+ௗ௬_ଶ
+) ) + ( ௗ௧
+௠.௖௣
+). qh .v Eqn 1
+
+2)qh = s.μ.e-μ.x
+
+Eqn 2 (volumetric internal heat
+
+generaƟon term)
+3)m = d.v= d. dx.dy.dz Eqn 3 (d=density)
+Here,
+X=distance from leŌ boundary
+S and μ are constants
+3c) Method: An iniƟal temperature is assumed for all the nodes, say 50, and is
+used to calculate the first iteraƟon of nodal temperatures using the finite
+difference equaƟons. The wall is assumed to be insulated on all four sides ,
+while a spaƟally varying internal heat generaƟon term is included at every
+
+node. The temperatures of the cooling coil locaƟons are fixed at the user-
+specified values (35°C) during every iteraƟon and are not updated. The first
+
+iteraƟon is stored in the list Tn.
+A funcƟon step() performs all subsequent iteraƟons. At the beginning of each
+iteraƟon, a copy of the current nodal temperatures is stored as Told. Using Told,
+all corner, boundary and interior node temperatures are recalculated by
+considering conducƟon in both x- and y-direcƟons, internal heat generaƟon
+and the cooling coil constraints, and the updated temperatures are stored in Tn.
+The maximum absolute difference between the corresponding elements of Tn
+and Told is then calculated. If the maximum difference is less than 0.001, the
+temperatures are considered to have converged, and the final nodal
+temperatures, number of iteraƟons and the temperature distribuƟon along the
+mid-horizontal line of the wall are ploƩed. Otherwise, the iteraƟons conƟnue
+unƟl convergence or the maximum iteraƟon limit is reached.
+
+20
+
+Fig 6: 20 x 20 nodes
+
+Fig 7: 53 x 53 nodes
+
+3d) InterpretaƟon: The temperature distribuƟon along the mid-horizontal
+secƟon of the wall is non-uniform due to the combined effects of spaƟally
+varying internal heat generaƟon and cooling coils. Sharp decreases in
+temperature correspond to the locaƟons of the cooling coils, where the
+temperature is maintained at a fixed value, while the regions between the coils
+exhibit a gradual rise in temperature because of internal heat generaƟon. The
+smooth variaƟon between successive nodes indicates that the finite difference
+soluƟon has converged to a steady-state temperature distribuƟon.
