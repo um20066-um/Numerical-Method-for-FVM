@@ -1,0 +1,546 @@
+#2D HT W CONTOUR PLOT & INTERNAL HEAT GENERATION
+import matplotlib.pyplot as plt
+import math
+#import os
+#2D Heat transfer
+count=1
+s=90*10**(1)
+mu=0.103*10**2
+
+def step():
+    global count
+    while True:
+        count=count+1
+        
+        t_old = t_n.copy()
+       
+    #for 1st element (row 1)
+        #To calculate the 1st nodal temperature
+        q_inx=0
+        q_iny=0
+        q_outy=(t_old[0]-t_old[2*c-1])/(l/(r))
+        q_outx=(t_old[0]-t_old[1])/(w/c)
+        dx=(w/(c))  ;  dy=(l/(r))
+        ax=dy*z  ; ay=dx*z
+        qh=s*mu*math.exp(-mu*(w/(2*c)))                      #IHG
+        t_i=t_old[0] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+        #To replace the 1st nodal temperature
+        t_n[0]=t_i
+       
+     
+    
+        #Calculating subsequent nodal temperatures till 2nd last one
+        for j in range(2,c):
+            q_inx=(t_i-t_old[j-1])/(w/(c))
+            q_iny=0
+            q_outy=(t_old[j-1]-t_old[2*c-j])/(l/(r))
+            q_outx=(t_old[j-1]-t_old[j])/(w/c)
+            dx=(w/(c))  ;  dy=(l/(r))
+            ay=dx*z  ; ax=dy*z
+            qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(j-1)))          #IHG
+            t_i=t_old[j-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+            t_n[j-1]=t_i    #To replace next nodal temperature
+            
+            #Cooling coil iteration n 1st row
+            for h in dist:
+                if j==h:
+                    t_n[j-1]=dist[h]
+                    t_i=dist[h]
+            
+       
+        #Last nodal temperature
+        q_inx=(t_i-t_old[c-1])/(w/(c))
+        q_iny=0
+        q_outx=0
+        q_outy=(t_old[c-1]-t_old[c])/(l/r)
+        dx=(w/(c))  ;  dy=(l/(r))
+        ay=dx*z  ; ax=dy*z
+        qh=s*mu*math.exp(-mu*(w-w/(2*c)))         #IHG
+        t_i=t_old[c-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+        t_n[c-1]=t_i          #To replace last nodal temperature
+        
+    #Next rows (Upto r-1)  rows 2,3,4.....
+        for i in range(2,r):
+            if i%2==0:                              #Even no. row
+                #Calculating 1st node temperature
+                q_inx=(t_old[1+(i-1)*c]-t_old[(i-1)*c])/(w/(c))
+                q_outx=0
+                q_iny=(t_i-t_old[(i-1)*c])/(l/(r))
+                q_outy=(t_old[c*(i-1)]-t_old[c*(i+1)-1])/(l/(r))
+                dx=(w/(c))  ;  dy=(l/(r))
+                ay=dx*z  ; ax=dy*z
+                qh=s*mu*math.exp(-mu*(w-w/(2*c)))             #IHG
+                t_i=t_old[(i-1)*c] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                t_n[(i-1)*c]=t_i
+                
+                #Calculating subsequent nodal temperatures till 2nd last one (row 5)
+                for j in range(2,c):
+                   q_iny=(t_n[(i-1)*c-j]-t_old[(i-1)*c+j-1])/(l/(r))
+                   q_inx=(t_old[c*(i-1)+j]-t_old[(i-1)*c+j-1])/(w/(c))
+                   q_outy=(t_old[(i-1)*c+j-1]-t_old[(i+1)*c-j])/(l/(r))
+                   q_outx=(t_old[(i-1)*c+j-1]-t_i)/(w/(c))
+                   dx=(w/(c))  ;  dy=(l/(r))
+                   ay=dx*z  ; ay=dx*z
+                   qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(c-j+1)))   #IHG
+                   t_i=t_old[(i-1)*c+j-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                   t_n[(i-1)*c+j-1]=t_i
+                   
+                   #Cooling coil iteration count;even rows
+                   for h in dist:
+                       if j==c-h+1:
+                           t_n[(i-1)*c+j-1]=dist[h]
+                           t_i=dist[h]
+                   
+                #Last nodal temperature
+                q_outy=(t_old[i*c-1]-t_old[i*c])/(l/(r))
+                q_outx=(t_old[i*c-1]-t_i)/(w/(c))
+                q_iny=(t_old[(i-2)*c]-t_old[i*c-1])/(l/(r))
+                q_inx=0
+                dx=(w/(c))  ;  dy=(l/(r))
+                ay=dx*z  ; ax=dy*z
+                qh=s*mu*math.exp(-mu*(w/(2*c)))            #IHG
+                t_i=t_old[i*c-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                t_n[i*c-1]=t_i
+                
+            if i%2 !=0:                              #Odd no. row
+            #Calculating 1st node temperature
+                q_inx=0
+                q_iny=(t_i-t_old[(i-1)*c])/(l/(r))
+                q_outy=(t_old[(i-1)*c]-t_old[(i+1)*c-1])/(l/(r))
+                q_outx=(t_old[(i-1)*c]-t_old[(i-1)*c+1])/(w/(c))
+                dx=(w/(c))  ;  dy=(l/(r))
+                ay=dx*z  ; ax=dy*z
+                qh=s*mu*math.exp(-mu*(w/(2*c)))                #IHG
+                t_i=t_old[(i-1)*c] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                t_n[(i-1)*c]=t_i
+                
+            #Calculating subsequent nodal temperatures till 2nd last one
+                for j in range(2,c):
+                   q_inx=(t_i-t_old[(i-1)*c+j-1])/(w/(c))
+                   q_iny=(t_n[c*(i-1)-j]-t_old[(i-1)*c+j-1])/(l/(r))
+                   q_outy=(t_old[(i-1)*c+j-1]-t_old[(i+1)*c-j])/(l/(r))
+                   q_outx=(t_old[(i-1)*c+j-1]-t_old[(i-1)*c+j])/(w/(c))
+                   dx=(w/(c))  ;  dy=(l/(r))
+                   ay=dx*z  ; ax=dy*z
+                   qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(j-1)))           #IHG
+                   t_i=t_old[(i-1)*c+j-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                   t_n[(i-1)*c+j-1]=t_i
+                   
+                   #Cooling coil iteration n odd rows
+                   for h in dist:
+                       if j==h:
+                           t_n[(i-1)*c+j-1]=dist[h]
+                           t_i=dist[h]
+                
+            #Last nodal temperature
+                q_inx=(t_i-t_old[i*c-1])/(w/(c))
+                q_iny=(t_n[c*(i-2)]-t_old[i*c-1])/(l/(r))
+                q_outy=(t_old[i*c-1]-t_old[i*c])/(l/(r))
+                q_outx=0
+                dx=(w/(c))  ;  dy=(l/(r))
+                ay=dx*z  ; ax=dy*z
+                qh=s*mu*math.exp(-mu*(w-w/(2*c)))           #IHG
+                t_i=t_old[i*c-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                t_n[i*c-1]=t_i   
+                
+    #For rth row
+        
+        #odd no. of rows
+        if r%2 != 0:
+        #Calculating 1st node temperature
+            q_inx=0
+            q_iny=(t_i-t_old[(r-1)*c])/(l/(r))
+            q_outy=0
+            q_outx=(t_old[(r-1)*c]-t_old[(r-1)*c+1])/(w/(c))
+            dx=(w/(c))  ;  dy=(l/(r))
+            ay=dx*z  ; ax=dy*z
+            qh=s*mu*math.exp(-mu*(w/(2*c)))          #IHG
+            t_i=t_old[(r-1)*c] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+            t_n[(r-1)*c]=t_i
+                
+        #Calculating subsequent nodal temperatures till 2nd last one
+            for j in range(2,c):
+                q_inx=(t_i-t_old[(r-1)*c+j-1])/(w/(c))
+                q_iny=(t_n[(r-1)*c-j]-t_old[(r-1)*c+j-1])/(l/(r))
+                q_outy=0
+                q_outx=(t_old[(r-1)*c+j-1]-t_old[(r-1)*c+j])/(w/(c))
+                dx=(w/(c))  ;  dy=(l/(r))
+                ay=dx*z  ; ax=dy*z
+                qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(j-1)))   #IHG
+                t_i=t_old[(r-1)*c+j-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                t_n[(r-1)*c+j-1]=t_i
+                
+                #Cooling coil iteration n lastoddrow
+                for h in dist:
+                    if j==h:
+                        t_n[(r-1)*c+j-1]=dist[h]
+                        t_i=dist[h]
+                
+    
+            
+        #Last nodal temperature
+            q_inx=(t_i-t_old[r*c-1])/(w/c)
+            q_iny=(t_n[c*(r-2)]-t_old[r*c-1])/(l/(r))
+            q_outx=0
+            q_outy=0
+            dx=(w/(c))  ;  dy=(l/(r))
+            ay=dx*z  ; ax=dy*z
+            qh=s*mu*math.exp(-mu*(w-w/(2*c)))      #IHG
+            t_i=t_old[r*c-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*dx*d_t/(d*cp))
+            t_n[r*c-1]=t_i
+            
+       #even no. of rows
+        if r%2 == 0:
+            #Calculating 1st node temperature
+                q_inx=(t_old[(r-1)*c+1]-t_old[(r-1)*c])/(w/(c))
+                q_iny=(t_i-t_old[(r-1)*c])/(l/(r))
+                q_outy=0
+                q_outx=0
+                dx=(w/(c))  ;  dy=(l/(r))
+                ay=dx*z  ; ax=dy*z
+                qh=s*mu*math.exp(-mu*(w-w/(2*c)))          #IHG
+                t_i=t_old[(r-1)*c] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                t_n[(r-1)*c]=t_i
+                
+      
+                
+                    
+            #Calculating subsequent nodal temperatures till 2nd last one
+                for j in range(2,c):
+                    q_inx=(t_i-t_old[(r-1)*c+j-1])/(w/(c))
+                    q_iny=(t_n[(r-1)*c-j]-t_old[(r-1)*c+j-1])/(l/(r))
+                    q_outy=0
+                    q_outx=(t_old[(r-1)*c+j-1]-t_old[(r-1)*c+j])/(w/(c))
+                    dx=(w/(c))  ;  dy=(l/(r))
+                    ay=dx*z  ; ax=dy*z
+                    qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(c-j+1)))       #IHG
+                    t_i=t_old[(r-1)*c+j-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                    t_n[(r-1)*c+j-1]=t_i
+                    
+                    #Cooling coil iteration n last even row
+                    for h in dist:
+                        if j==c-h+1:
+                            t_n[(r-1)*c+j-1]=dist[h]
+                            t_i=dist[h]
+                
+            #Last nodal temperature
+                q_outx=(t_old[r*c-1]-t_i)/(w/c)
+                q_iny=(t_n[c*(r-2)]-t_old[r*c-1])/(l/(r))
+                q_inx=0
+                q_outy=0
+                dx=(w/(c))  ;  dy=(l/(r))
+                ax=dy*z  ; ay=dx*z
+                qh=s*mu*math.exp(-mu*(w/(2*c)))        #IHG
+                t_i=t_old[r*c-1] + ((k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)) +qh*d_t/(d*cp))
+                t_n[r*c-1]=t_i
+                       
+           # # Printing node temperatures
+           #      for h in range(len(t_n)):
+           #          t_n[h]=round(t_n[h],3)
+           #      print(count,") Node temperatures:",[f"T_{i+1}={round(t_n[i],2)}" for i in range(len(t_n))])
+                
+            #Check        
+        max_change = max(abs(t_n[i]-t_old[i]) for i in range(len(t_n)))
+        
+        if max_change < 0.001:
+            print("No. of Iterations:", count,"Temperatures:",[f"T_{i+1}={round(t_n[i],2)}" for i in range(len(t_n))])
+            plt.close('all')
+            line_plot()
+            #ihg_plot()
+            return 
+                        
+        if count > 200000:
+            print("Not applicable")
+            return
+
+
+
+
+ #Plot function
+def line_plot():
+    wl = []
+    yl=[]
+    # Node locations
+    n4=(r//2)*c
+    for i in range(c):
+        wl.append((2*i + 1)*w/(2*c))
+    if (r//2)%2==0:
+        for y in t_n[n4-1:n4-c-1:-1]:
+            yl.append(y)
+    if (r//2)%2!=0:
+        for y in t_n[n4-c:n4:1]:
+            yl.append(y)
+                
+    plt.plot(wl, yl, marker='o')
+    plt.xlabel("Position (m)")
+    plt.ylabel("Temperature (°C)")
+    plt.title("Temperature Distribution")
+    plt.grid(True)
+    plt.show()
+
+def ihg_plot():
+    #heat flow(w) vs m
+    ql=[]
+    wl=[]
+    for j in range(c):
+        wl.append((2*j + 1)*w/(2*c))
+    ql.append(s*mu*math.exp(-mu*(w/(2*c))))    #1st node
+    for j in range(c,2,-1):
+        if (r//2)%2==0:
+            ql.append(s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(c-j+1))))
+        else:
+            ql.append(s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(j-1))))
+    ql.append(s*mu*math.exp(-mu*(w-w/(2*c))))   #last node
+    
+    
+    plt.plot(wl, ql, marker='o')
+    plt.xlabel("Position (m)")
+    plt.ylabel("Watt(w)")
+    plt.title("Internal heat generation graph")
+    plt.grid(True)
+    plt.show()   
+        
+    
+#Input
+#temperature
+# t_le=float(input("Enter the initial temperature (left):"))
+# t_re=float(input("Enter the final temperature of the wall(right):"))
+# t_bo=float(input("Enter the initial temperature (bottom):"))
+# t_to=float(input("Enter the final temperature of the wall(top):"))
+# #wall property
+# d=float(input("Enter the density of the wall:"))
+# k=float(input("Enter the thermal conductivity of the wall:"))
+# l=float(input("Enter the length of the wall:"))
+# w=float(input("Enter the width of the wall:"))
+r = int(input("Enter the no. of rows: ")) 
+c = int(input("Enter the no. of columns: "))
+#z=float(input("Enter the thickness of the wall:"))
+#cp=float(input("Enter the specific heat of the wall:"))
+#Variables
+d_t=float(input("Enter the time interval in rod:"))
+t_g=int(input("Enter the assumed temperature for node:"))
+co=int(input("Enter the no. of cooling coils:"))
+dist={}    #dictionary
+t_le=100
+t_re=300
+t_bo=200
+t_to=400
+d=3500
+k=1.5
+l=w=0.5
+z=1
+cp=983.24
+#No. of cooling coils
+for i in range(1,co+1):
+    n1=float(input(f"Enter the temperature of cooling coil {i}:"))
+    n2=float(input(f"Enter the distance of cooling coil {i} from left boundary:"))
+    n3=n2//(w/c)+1   #column no. of cooling coil
+    dist[n3]=n1 
+
+    
+
+#To store nodal temperatures; changes with every iteration
+t_n=[]  
+
+#Iteration 1
+#Row 1
+#To calculate the 1st nodal temperature
+q_inx=0
+q_iny=0
+dx=(w/(c))  ;  dy=(l/(r))
+ay=dx*z  ; ax=dy*z
+qh=s*mu*math.exp(-mu*(w/(2*c)))         #IHG
+t_i=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx)+ay*(q_iny) + qh*d_t/(d*cp))
+
+#To store the 1st nodal temperature
+t_n.append(t_i)
+
+#Calculating subsequent nodal temperatures till 2nd last one
+for j in range(2,c):
+    q_inx=(t_i-t_g)/(w/(c))
+    q_iny=0
+    dx=(w/(c))  ;  dy=(l/(r))
+    ay=dx*z  ; ax=dy*z
+    qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(j-1)))     #IHG
+    t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx)+ay*(q_iny) + qh*d_t/(d*cp))
+    t_n.append(t_ii)     #To store next nodal temperature
+    t_i=t_ii
+    
+    #Cooling coil iteration 1 1st row
+    for h in dist:
+        if j==h:
+            t_n[-1]=dist[h]
+            t_i=dist[h]
+    
+    
+#Last nodal temperature
+q_inx=(t_i-t_g)/(w/(c))
+q_iny=0
+q_outx=0
+dx=(w/(c))  ;  dy=(l/(r))
+ay=dx*z  ; ax=dy*z
+qh=s*mu*math.exp(-mu*(w-w/(2*c)))        #IHG
+t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny)+ qh*d_t/(d*cp))
+t_n.append(t_ii)
+
+#Next rows (Upto r-1)
+for i in range(2,r):
+    if i%2==0:                              #Even no. row
+        #Calculating 1st node temperature
+        q_outx=0
+        q_iny=(t_n[-1]-t_g)/(l/(2*r))
+        dx=(w/(c))  ;  dy=(l/(r))
+        ay=dx*z  ; ax=dy*z
+        qh=s*mu*math.exp(-mu*(w-w/(2*c)))           #IHG
+        t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(-q_outx)+ay*(q_iny)+ qh*d_t/(d*cp))
+        t_n.append(t_ii)
+        
+        #Calculating subsequent nodal temperatures till 2nd last one
+        for j in range(2,c):
+            q_outx= (t_n[-1]-t_g)/(w/(c))
+            q_iny=(t_n[1-2*j]-t_g)/(l/(r))
+            dx=(w/(c))  ;  dy=(l/(r))
+            ay=dx*z  ; ax=dy*z
+            qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(c-j+1)))       #IHG
+            t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(-q_outx)+ay*(q_iny)+ qh*d_t/(d*cp))
+            t_n.append(t_ii)
+            
+            #Cooling coil iteration 1 even row
+            for h in dist:
+                if j==c-h+1:
+                    t_n[-1]=dist[h]
+            
+        #Last nodal temperature
+        q_outx=(t_le-t_g)/(w/(2*c))
+        q_iny=(t_n[1-2*c]-t_g)/(l/(r))
+        q_inx=0
+        dx=(w/(c))  ;  dy=(l/(r))
+        ay=dx*z  ; ax=dy*z 
+        qh=s*mu*math.exp(-mu*(w/(2*c)))       #IHG
+        t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny)+ qh*d_t/(d*cp))
+        t_n.append(t_ii)
+        
+    if i%2 !=0:                              #Odd no. row
+    #Calculating 1st node temperature
+        q_inx=0
+        q_iny=(t_n[-1]-t_g)/(l/(r))
+        dx=(w/(c))  ;  dy=(l/(r))
+        ay=dx*z  ; ax=dy*z
+        qh=s*mu*math.exp(-mu*(w/(2*c)))          #IHG
+        t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx)+ay*(q_iny)+ qh*d_t/(d*cp))
+        t_n.append(t_ii)
+        
+    #Calculating subsequent nodal temperatures till 2nd last one
+        for j in range(2,c):
+            q_inx=(t_n[-1]-t_g)/(w/(c)) 
+            q_iny=(t_n[1-(2*j)]-t_g)/(l/(r))
+            dx=(w/(c))  ;  dy=(l/(r))
+            ay=dx*z  ; ay=dx*z
+            qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(j-1)))      #IHG
+            t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx)+ay*(q_iny)+ qh*d_t/(d*cp))
+            t_n.append(t_ii)
+            
+            #Cooling coil iteration 1 odd rows
+            for h in dist:
+                if j==h:
+                    t_n[-1]=dist[h]
+        
+    #Last nodal temperature
+        q_inx=(t_n[-1]-t_g)/(w/(c))
+        q_iny=(t_n[1-(2*c)]-t_g)/(l/(r))
+        q_outx=0
+        dx=(w/(c))  ;  dy=(l/(r))
+        ax=dy*z  ; ay=dx*z
+        qh=s*mu*math.exp(-mu*(w-w/(2*c)))       #IHG
+        t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny)+ qh*d_t/(d*cp))
+        t_n.append(t_ii)
+    
+#For rth row
+ #odd
+if r%2!=0:
+    
+    #Calculating 1st node temperature
+    q_inx=0
+    q_iny=(t_n[-1]-t_g)/(l/(r))
+    dx=(w/(c))  ;  dy=(l/(r))
+    ay=dx*z  ; ax=dy*z
+    qh=s*mu*math.exp(-mu*(w/(2*c)))       #IHG
+    t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx)+ay*(q_iny)+ qh*d_t/(d*cp))
+    t_n.append(t_ii)
+    
+#Calculating subsequent nodal temperatures till 2nd last one
+    for j in range(2,c):
+        q_inx=(t_n[-1]-t_g)/(w/(c)) 
+        q_iny=(t_n[1-(2*j)]-t_g)/(l/(r))
+        dx=(w/(c))  ;  dy=(l/(r))
+        ay=dx*z  ; ax=dy*z
+        qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(j-1)))       #IHG
+        t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx)+ay*(q_iny)+ qh*d_t/(d*cp))
+        t_n.append(t_ii)
+        
+        #Cooling coil iteration 1 odd rows last
+        for h in dist:
+            if j==h:
+                t_n[-1]=dist[h]
+    
+#Last nodal temperature
+    q_inx=(t_n[-1]-t_g)/(w/(2*c))
+    q_iny=(t_n[1-(2*c)]-t_g)/(l/(2*r))
+    q_outx=0
+    q_outy=0
+    dx=(w/(c))  ;  dy=(l/(r))
+    ax=dy*z  ; ay=dx*z
+    qh=s*mu*math.exp(-mu*(w-w/(2*c)))      #IHG
+    t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)+ qh*d_t/(d*cp))
+    t_n.append(t_ii)
+    
+    #Even
+if r%2==0:
+    
+    #1st nodal temperature
+    q_inx=(t_n[-1]-t_g)/(w/(c))
+    q_iny=(t_n[1-(2*c)]-t_g)/(l/(r))
+    q_outy=0
+    q_outx=0
+    dx=(w/(c))  ;  dy=(l/(r))
+    ay=dx*z  ; ax=dy*z
+    qh=s*mu*math.exp(-mu*(w-w/(2*c)))         #IHG
+    t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny-q_outy)+ qh*d_t/(d*cp))
+    t_n.append(t_ii)
+    
+    #Calculating subsequent nodal temperatures till 2nd last one
+    for j in range(2,c):
+        q_inx=(t_n[-1]-t_g)/(w/(c)) 
+        q_iny=(t_n[1-(2*j)]-t_g)/(l/(r))
+        dx=(w/(c))  ;  dy=(l/(r))
+        ay=dx*z  ; ax=dy*z
+        qh=s*mu*math.exp(-mu*((w/(2*c))+ (w/c)*(c-j+1)))      #IHG
+        t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx)+ay*(q_iny)+ qh*d_t/(d*cp))
+        t_n.append(t_ii)
+        
+        #Cooling coil iteration 1 even row last
+        for h in dist:
+            if j==c-h+1:
+                t_n[-1]=dist[h]
+        
+    #last nodal temperature   
+    q_inx=0
+    q_iny=(t_n[1-(2*c)]-t_g)/(l/(r))
+    q_outx=(t_g-t_n[-1])/(w/(2*c))
+    q_outy=0
+    dx=(w/(c))  ;  dy=(l/(r))
+    ay=dx*z  ; ax=dy*z
+    qh=s*mu*math.exp(-mu*(w/(2*c)))    #IHG
+    t_ii=t_g + (k*d_t/(d*dx*dy*z*cp))*(ax*(q_inx-q_outx)+ay*(q_iny)+ qh*d_t/(d*cp))
+    t_n.append(t_ii)
+    
+    
+    
+    
+
+# for h in range(len(t_n)):
+#     t_n[h]=round(t_n[h],3)
+# print("1) Node temperatures:",t_n)
+
+#Next iteration
+step()
